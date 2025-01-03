@@ -93,7 +93,7 @@ Grundprinzip im Aufruf (*vereinfachtes Beispiel*):
 
 namespace App\Http\Controller\DesiredController;
 
-use DO\DataObject;
+use DO\Main\DataObject;
 
 class DesiredController extends Controller
 {
@@ -170,6 +170,6 @@ Parameter aufgerufen werden, werden alle Properties dieser Kategorie ausgegeben.
 
 ## Ausgabe einer Tabelle
 
-Die Ausgabe einer Tabelle erfolgt mittels ```$object->outputObject()```.
+Die Ausgabe einer Tabelle erfolgt mittels ```outputObject()```, z.B. ```getDataObject('objectID')->outputObject();```
 
 # DataObject-Formular
