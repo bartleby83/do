@@ -1,4 +1,4 @@
-# DataObjects zur Erstellung von einheitlich generierten von Listen und Formularen
+# DataObjects für Formulare und Listen
 
 ## Inhalt
 
