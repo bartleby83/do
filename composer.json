@@ -1,0 +1,42 @@
+{
+  "name": "brtlby/do",
+  "type": "library",
+  "description": "A builder for Forms and Lists",
+  "keywords": [
+    "Lists",
+    "Forms",
+    "Tables"
+  ],
+  "homepage": "https://github.com/bartleby83/do",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sascha Dingens",
+      "email": "brtlby@brtlbyntwrk.de",
+      "homepage": "http://brtlbyntwrk.de",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=8.3.0",
+    "illuminate/support": "^10.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "DO\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "DO\\DataObjectsServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "support": {
+    "issues": "https://github.com/bartleby83/do/issues",
+    "source": "https://github.com/bartleby83/do"
+  }
+}
