@@ -5,7 +5,7 @@
 - [DataObjects:Übersicht](#DataObjects-Übersicht)
 - [Konfiguration](#Konfiguration)
 - [DataObject:Liste](#DataObject-Liste)
-- [DataObject-Formular](#dataobject-formular)
+- [DataObject:Formular](#Dataobject-Formular)
 
 ## DataObjects-Übersicht
 
@@ -171,3 +171,5 @@ Parameter aufgerufen werden, werden alle Properties dieser Kategorie ausgegeben.
 ## Ausgabe einer Tabelle
 
 Die Ausgabe einer Tabelle erfolgt mittels ```$object->outputObject()```.
+
+# DataObject-Formular
