@@ -23,13 +23,17 @@
   },
   "autoload": {
     "psr-4": {
-      "DO\\": "src/"
-    }
+      "DO\\Tools\\": "tools/",
+      "DO\\Main\\": "src/"
+    },
+    "files": [
+      "tools/Support/helpers.php"
+    ]
   },
   "extra": {
     "laravel": {
       "providers": [
-        "DO\\DataObjectsServiceProvider"
+        "DO\\Main\\DataObjectsServiceProvider"
       ]
     }
   },
