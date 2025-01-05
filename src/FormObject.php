@@ -112,6 +112,9 @@ final class FormObject extends DataObjectsCore {
      */
     public function setDataSetID(string|int|null $id = null): self {
         $this->setLog(__METHOD__);
+        if($this->dataSetID <> $id) {
+            if($this->dataResults()->whichPrimary() !== null) $this->dataResults()->destroy($this->dataResults()->whichPrimary());
+        }
         $this->dataSetID = $id;
         return $this;
     }
@@ -174,7 +177,7 @@ final class FormObject extends DataObjectsCore {
         $maxValue = $this->getFieldProperty($field, 'maxValue');
         $fieldPattern = $this->getFieldProperty($field, 'fieldPattern');
         $writeable = $this->getFieldProperty($field, 'writeable');
-        $fieldValue = $this->getFieldValue($field);
+        $fieldValue = null;
         $rawData = [];
         switch ($fieldType) {
             case 'color':
@@ -323,7 +326,10 @@ final class FormObject extends DataObjectsCore {
         if (request()->get('processingMethod') === 'saveEntry') {
             if (request()->has('dataSetID'))
                 $this->setDataSetID(request()->get('dataSetID'));
+
+            var_dump($this->getDataSetID());
             if ($this->save()) {
+                $this->processingQuery();
                 $objectResult['fieldValues'] = $this->getResults();
                 $objectResult['success'] = true;
             } else {
@@ -345,7 +351,7 @@ final class FormObject extends DataObjectsCore {
         $results = [];
         if(! $this->hasDataResults()) {
             if ($this->hasDataSources()) {
-                return $this->processingQuery();
+                $this->processingQuery();
             }
         }
 
@@ -363,7 +369,8 @@ final class FormObject extends DataObjectsCore {
         $queryBuilder = clone $this->dataSources()->getPrimarySource();
         if ($this->getDataSetID() !== "") {
             if ($queryBuilder instanceof Builder) {
-                return $this->processingEloquentQuery($queryBuilder);
+                $this->processingEloquentQuery($queryBuilder);
+                return $this->dataResults()->get($this->dataResults()->whichPrimary())->toArray();
             }
         } else {
             return $this->fields()->properties('defaultValue');
@@ -374,22 +381,86 @@ final class FormObject extends DataObjectsCore {
     /**
      * @throws Exception
      */
-    private function processingEloquentQuery(Builder $queryBuilder): array {
+    private function processingEloquentQuery(Builder $queryBuilder): void {
         $this->setLog(__METHOD__);
         $results = $queryBuilder->find($this->getDataSetID());
+        $results = $this->processingFieldData($results);
         $this->dataResults()->add(\collect($results), $this->dataSources()->whichPrimary());
-        return $this->processingFieldData($results);
     }
 
     /**
      * @throws Exception
      */
-    private function processingFieldData(mixed $row): array {
+    private function processingFieldData(mixed $row): array
+    {
+        $fields = $this->getFieldIndex();
+        $results = [];
+        if(!is_array($row)) {
+            $row = $row->toArray();
+        }
+        echo "objectID " . $this->getObjectProperty('objectID') . "\n";
+
+        foreach($fields as $field) {
+            if($field === 'checkbox') continue;
+            if($field === 'tools') continue;
+            $fieldSources = $this->getFieldProperty($field, 'fieldSource');
+
+            $results[$field] = $row[$field] ?? "nicht gesetzt (0)";
+
+            if (isset($this->getFieldProperty($field, 'fieldRenderOptions')['renderOutput']['output'])) {
+                continue;
+            }
+
+
+            foreach($fieldSources ?? [] as $source) {
+                if(is_array($source)) {
+                    if(count($source) === 2) {
+                        if(array_key_exists($source[1], $row)) {
+                            $results[$field] = $row[$source[1]];
+                        }
+                    }
+                    if(count($source) === 3) {
+                        if(array_key_exists($source[1], $row)) {
+                            $results[$field] = $row[$source[1]][$source[2]];
+                        }
+                    }
+                }
+            }
+
+            if (array_key_exists($field, $results)) {
+                if ($this->getFieldProperty($field, 'fieldType') === 'checkbox')
+                    $results[$field] = '';
+                if ($this->getFieldProperty($field, 'fieldType') === 'tools')
+                    $results[$field] = '';
+                if ($this->getFieldProperty($field, 'fieldType') === 'date') {
+                    if ($results[$field] !== "") $results[$field] = Carbon::parse($results[$field])->format('d.m.Y');
+                }
+                if ($this->getFieldProperty($field, 'fieldType') === 'datetime') {
+                    if ($results[$field] !== "") $results[$field] = Carbon::parse($results[$field])->format("d.m.Y H:i:s");
+                }
+                if ($this->getFieldProperty($field, 'fieldType') === 'time') {
+                    if ($results[$field] !== "") $results[$field] = Carbon::parse($results[$field])->format('H:i');
+                }
+                if ($this->getFieldProperty($field, 'fieldType') === 'filesize')
+                    $results[$field] = formatFileSize($results[$field]);
+            }
+        }
+
+
+        return $results;
+    }
+
+        /**
+     * @throws Exception
+     */
+    private function processingFieldData_obsolete(mixed $row): array {
         $this->setLog(__METHOD__);
         $result = [];
         $data = $row?->toArray() ?? [];
         $fields = $this->getFieldIndex();
         foreach ($fields as $field) {
+            if($field === 'checkbox') continue;
+            if($field === 'tools') continue;
             $result[$field] = $data[$field] ?? $this->getFieldProperty($field, 'defaultValue');
 //            if ($this->getFieldProperty($field, 'ignoreField') === true) continue;
             // check fieldSource
@@ -421,6 +492,7 @@ final class FormObject extends DataObjectsCore {
                                 }
                             }
                         }
+
                         if (count($source) === 3) {
                             $nestedData = [];
                             if (isset($data[$source[1]]) && is_array($data[$source[1]])) {
