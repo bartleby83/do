@@ -152,13 +152,11 @@
                 $objectResult['fields'] = $this->getFieldProperty();
             } elseif (request()->get('processingMethod') === 'changeValue') {
                 echo "send data to change a value in a table\n";
-//            var_dump(request('parameters'));
                 $objectResult['state'] = $this->changeValueInTable();
             } elseif (request()->get('processingMethod') === 'getResults') {
                 $objectResult = $this->getResults();
             }
-//        $objectResult['log'] = $this->getLog();
-//        var_dump($objectResult);
+
             return $objectResult;
         }
 
