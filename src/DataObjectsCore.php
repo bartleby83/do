@@ -22,7 +22,7 @@
     use ReflectionClass;
     use UnexpectedValueException;
     use function formatFileSize;
-    
+
     /**
  * The DataObjectsCore class represents a base class for data objects.
  * It provides properties and methods for handling object properties, list properties, form properties,
@@ -167,10 +167,11 @@ class DataObjectsCore {
      *
      * @return self Returns the object after the filters have been set.
      */
-    public function setFilter(int|string|bool|float|null $value, string $key = null): self {
+    public function setFilter(int|string|bool|float|null|array $value, string $key = null): self {
         $this->setLog(__METHOD__);
-        if ($key !== null)
+        if ($key !== null) {
             $this->setListProperty('filterKey', $key);
+        }
         $this->setListProperty('filter', $value);
         return $this;
     }
@@ -204,7 +205,7 @@ class DataObjectsCore {
      *
      * @return int|string|bool|float|null The value of the 'filter' property of the list. It could be of various types.
      */
-    public function getFilter(): int|string|bool|float|null {
+    public function getFilter(): int|string|bool|float|null|array {
         $this->setLog(__METHOD__);
         return $this->getListProperty('filter');
     }
@@ -885,7 +886,7 @@ class DataObjectsCore {
                     $this->getField($field)?->setFieldProperty($property, 'text');
                     $this->getField($field)?->setFieldProperty('fieldContentType', $value);
                 }
-                if ($value === 'select' || $value === 'multiselect') { // if type select, the default content are bool selections
+                if ($value === 'select' || $value === 'multiselect' || $value === 'truefalse') { // if type select, the default content are bool selections
                     $this->getField($field)?->setFieldProperty($property, $value);
                     $this->getField($field)?->setFieldProperty('fieldContentType', 'bool');
                     $options = [];
