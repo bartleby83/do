@@ -31,7 +31,7 @@
       "DO\\Main\\": "src/"
     },
     "files": [
-      "tools/Support/helpers.php"
+      "/tools/Support/helpers.php"
     ]
   },
   "extra": {
