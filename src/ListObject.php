@@ -6,6 +6,8 @@
     use DO\Main\PropertyElements\DataTableProperties;
     use DO\Main\PropertyElements\ListProperties;
     use DO\Main\PropertyElements\ObjectProperties;
+    use DO\Tools\Enums\Currency;
+    use DO\Tools\Enums\States;
     use Exception;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -230,9 +232,14 @@
             $model = $source->getModel();
 
             // Abfrage vor dem Abrufen des Datensatzes
-            $query = $model
-                ->where($this->getFilterKey(), '=', $this->getFilter())  // z.B. groupid
-                ->where($this->getListProperty('primaryKey'), '=', $this->getDataSetID());  // Primärschlüssel
+            if(is_array($this->getFilter())) {
+                $query = $model
+                    ->whereIn($this->getFilterKey(), $this->getFilter());
+            } else {
+                $query = $model
+                    ->where($this->getFilterKey(), '=', $this->getFilter())
+                    ->where($this->getListProperty('primaryKey'), '=', $this->getDataSetID());  // Primärschlüssel
+            }
 
             // Führe die Abfrage aus, um den spezifischen Datensatz abzurufen
             $data = $query->first();
@@ -386,7 +393,11 @@
 //        ]), JSON_PRETTY_PRINT);
             $request = request(); // Zugriff auf die Request-Daten
             // if there is an filter, append it to the query
-            $queryBuilder->where($this->getFilterKey(), $this->getFilter());
+            if(is_array($this->getFilter())) {
+                $queryBuilder->whereIn($this->getFilterKey(), $this->getFilter());
+            } else {
+                $queryBuilder->where($this->getFilterKey(), $this->getFilter());
+            }
             // count total records and records filtered
             $dummy = $queryBuilder;
             $recordsTotal = $recordsFiltered = $dummy->count();
@@ -773,6 +784,20 @@
                     if ($this->getFieldProperty($field, 'fieldType') === 'filesize') {
                         $data[$field] = formatFileSize($data[$field]);
                     }
+                    if ($this->getFieldProperty($field, 'fieldType') === 'enum') {
+                        if ($this->getFieldProperty($field, 'fieldContentType') === 'currency') {
+                            if (Currency::tryFrom($data[$field])) {
+                                $data[$field] = Currency::from($data[$field])->label(); // Gibt "Euro" aus
+                            }
+                        }
+
+                        if ($this->getFieldProperty($field, 'fieldContentType') === 'states') {
+                            if (States::tryFrom($data[$field])) {
+                                $data[$field] = States::from($data[$field])->label();
+                            }
+                        }
+                    }
+
                     if (array_key_exists($field, $data)) {
                         $result[$field] = $data[$field];
                     }

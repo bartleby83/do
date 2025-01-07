@@ -7,6 +7,8 @@
     use DO\Main\PropertyElements\ObjectProperties;
     use DO\Main\SourceControl\DataResultStacks;
     use DO\Main\SourceControl\DataSourceStacks;
+    use DO\Tools\Enums\Currency;
+    use DO\Tools\Enums\States;
     use Exception;
     use Illuminate\Contracts\Database\Eloquent\Builder;
     use Illuminate\Support\Collection;
@@ -164,7 +166,6 @@ final class FormObject extends DataObjectsCore {
      */
     public function outputField(string $field): View|string {
         $this->setLog(__METHOD__);
-//        echo "Feld: " . $field . " fieldType: " . $this->getFieldProperty($field, 'fieldType') . " fieldContentType: " . $this->getFieldProperty($field, 'fieldContentType') . "\n";
         $fieldDescription = $this->getFieldProperty($field, 'fieldDescription');
         $fieldType = $this->getFieldProperty($field, 'fieldType');
         $fieldContentType = $this->getFieldProperty($field, "fieldContentType");
@@ -194,16 +195,12 @@ final class FormObject extends DataObjectsCore {
             case 'multiselect':
                 $options = [];
                 if (array_key_exists($field, $this->fieldConfigs['fieldRenderOptions']) && is_array($this->fieldConfigs['fieldRenderOptions'][$field]['renderFunction'])) {
-//                    var_dump("A");
                     if (method_exists($this->fieldConfigs['fieldRenderOptions'][$field]['renderFunction'][0], $this->fieldConfigs['fieldRenderOptions'][$field]['renderFunction'][1])) {
                         $options = call_user_func($this->fieldConfigs['fieldRenderOptions'][$field]['renderFunction'][0] . "::" . $this->fieldConfigs['fieldRenderOptions'][$field]['renderFunction'][1], $rawData, $field);
-//                        var_dump($options);
                         $this->setFieldProperty($field, 'fieldOptions', $options);
                     }
                 } elseif (array_key_exists($field, $this->fieldConfigs['fieldRenderOptions']) && is_string($this->fieldConfigs['fieldRenderOptions'][$field]['renderFunction'])) {
-//                    var_dump("B");
                     $functionArray = explode('::', $this->fieldConfigs['fieldRenderOptions'][$field]['renderFunction']);
-//                    var_dump($functionArray, method_exists($functionArray[0], $functionArray[1]));
                     if (method_exists($functionArray[0], $functionArray[1])) {
                         $funcResult = call_user_func($functionArray, $rawData, $field);
                         foreach ($funcResult as $value) {
@@ -327,7 +324,6 @@ final class FormObject extends DataObjectsCore {
             if (request()->has('dataSetID'))
                 $this->setDataSetID(request()->get('dataSetID'));
 
-            var_dump($this->getDataSetID());
             if ($this->save()) {
                 $this->processingQuery();
                 $objectResult['fieldValues'] = $this->getResults();
@@ -398,7 +394,6 @@ final class FormObject extends DataObjectsCore {
         if(!is_array($row)) {
             $row = $row->toArray();
         }
-        echo "objectID " . $this->getObjectProperty('objectID') . "\n";
 
         foreach($fields as $field) {
             if($field === 'checkbox') continue;
@@ -443,6 +438,25 @@ final class FormObject extends DataObjectsCore {
                 }
                 if ($this->getFieldProperty($field, 'fieldType') === 'filesize')
                     $results[$field] = formatFileSize($results[$field]);
+
+                if ($this->getFieldProperty($field, 'fieldType') === 'int' && $this->getFieldProperty($field, 'fieldContentType') === 'convertToDecimal') {
+                    $results[$field] = (float) $results[$field] / 100;
+                }
+                if ($this->getFieldProperty($field, 'fieldType') === 'enum') {
+                    if ($this->getFieldProperty($field, 'fieldContentType') === 'currency') {
+                        if (Currency::tryFrom($results[$field])) {
+                            $results[$field] = Currency::from($results[$field])->label(); // Gibt "Euro" aus
+                        }
+                    }
+
+                    if ($this->getFieldProperty($field, 'fieldContentType') === 'states') {
+                        if (States::tryFrom($results[$field])) {
+                            $results[$field] = States::from($results[$field])->label();
+                        }
+                    }
+
+
+                }
             }
         }
 
@@ -538,6 +552,16 @@ final class FormObject extends DataObjectsCore {
                 }
                 if ($this->getFieldProperty($field, 'fieldType') === 'filesize')
                     $result[$field] = formatFileSize($result[$field]);
+
+                if ($this->getFieldProperty($field, 'fieldType') === 'int' && $this->getFieldProperty($field, 'fieldContentType') === 'convertToDecimal') {
+                    $result[$field] = $result[$field] / 100;
+                }
+
+                if ($this->getFieldProperty($field, 'fieldType') === 'enum' && $this->getFieldProperty($field, 'fieldContentType') === 'currency') {
+                    if (Currency::tryFrom($result[$field])) {
+                        $result[$field] = Currency::from($result[$field])->label(); // Gibt "Euro" aus
+                    }
+                }
             }
         }
         return $result;
@@ -649,13 +673,10 @@ final class FormObject extends DataObjectsCore {
                 break;
             case 'textarea':
                 if ($fieldContentType === 'password') {
-//                    var_dump("PASSWORD SOLL GEÄNDERT WERDEN");
                     $ruleSet = $this->getField($field)->getRuleSet();
                     if ($this->getField($field)->validatePassword($incomingValue)) {
-//                        var_dump("Das Password wurde geprüft: OK");
                         $fieldValue = Hash::make($incomingValue);
-                    } //else var_dump("Das Password wurde geprüft: NICHT OK");
-//                    $fieldValue = $this->getField($field)->validatePassword();
+                    }
                 }
                 if ($fieldContentType === 'text' || $fieldContentType === 'textarea') {
                     $fieldValue = $incomingValue;
